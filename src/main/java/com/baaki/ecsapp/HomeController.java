@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class HomeController {
     @GetMapping("/")
     public String index() {
-        return "Hello from Abdul Baaki N-Nyeyam Hudu! This is the ECS CI/CD Lab.";
+        return "Hello from Abdul Baaki N-Nyeyam Hudu! This is the ECS CI/CD Lab. Wednesday";
     }
 }
