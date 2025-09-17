@@ -1,4 +1,78 @@
-name: build-and-push.yml
+name: Build project, push to ECR, and prepare deployment package
+
 on:
+  push:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image to Amazon ECR (latest only)
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+          echo "image-uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+      - name: Prepare deployment package
+        env:
+          IMAGE_URI: ${{ steps.build-image.outputs.image-uri }}
+        run: |
+          mkdir -p deployment
+
+          cp appspec.yml deployment/appspec.yml
+          cp taskdef.json deployment/taskdef.json
+
+          IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:latest          
+          cat > deployment/imageDetail.json <<EOL
+          [
+            {
+              "name": "${{ env.CONTAINER_NAME }}",
+              "imageUri": "${IMAGE_URI}"
+            }
+          ]
+          EOL
+
+      - name: Create and upload deployment zip to S3
+        run: |
+          cd deployment
+          zip ../codepipeline-deployment-files.zip appspec.yml taskdef.json imageDetail.json
+          cd ..
+          aws s3 cp codepipeline-deployment-files.zip s3://$S3_BUCKET/codepipeline-deployment-files.zip --region $AWS_REGION
+          echo "Deployment package uploaded to S3"
