@@ -5,7 +5,7 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Copy the compiled application JAR file into the container
-COPY target/personal-app.jar app.jar
+COPY target/ecs-app.jar app.jar
 
 # Expose the port the application will run on
 EXPOSE 8080
