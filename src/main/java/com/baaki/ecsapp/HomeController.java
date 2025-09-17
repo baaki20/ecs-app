@@ -1,12 +1,16 @@
 package com.baaki.ecsapp;
 
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@Controller
 public class HomeController {
     @GetMapping("/")
-    public String index() {
-        return "Hello from Abdul Baaki N-Nyeyam Hudu! This is the ECS CI/CD Lab. Wednesday";
+    public String index(Model model) {
+        model.addAttribute("fullName", "Abdul Baaki N-Nyeyam Hudu");
+        model.addAttribute("labName", "ECS CI/CD Lab");
+        model.addAttribute("lastUpdated", "Wednesday");
+        return "index";
     }
 }
