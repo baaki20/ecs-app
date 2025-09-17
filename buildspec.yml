@@ -25,7 +25,7 @@ phases:
       - docker push $ECR_REPOSITORY_URI:$IMAGE_TAG
       # Create imagedefinitions.json for CodeDeploy
       - echo "Creating imagedefinitions.json for CodeDeploy..."
-      - printf '[{"name":"cicdlab-container","imageUri":"%s"}]' "$ECR_REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
+      - printf '[{"name":"ecs-container","imageUri":"%s"}]' "$ECR_REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
 artifacts:
   files:
     # Include the necessary files for CodeDeploy to pick up
