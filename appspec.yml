@@ -1,0 +1,9 @@
+version: 1.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: arn:aws:ecs:eu-west-1:414392949441:task-definition/ecs-task-def:30
+        LoadBalancerInfo:
+          ContainerName: ecs-container
+          ContainerPort: 8080
