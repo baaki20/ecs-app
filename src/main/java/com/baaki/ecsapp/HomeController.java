@@ -10,7 +10,7 @@ public class HomeController {
     public String index(Model model) {
         model.addAttribute("fullName", "Abdul Baaki N-Nyeyam Hudu");
         model.addAttribute("labName", "ECS CI/CD Lab");
-        model.addAttribute("lastUpdated", "Today");
+        model.addAttribute("lastUpdated", "New Today");
         return "index";
     }
 }
