@@ -4,12 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::329599647651:role/photo-uploader-task-execution-role",
-  "taskRoleArn": "arn:aws:iam::329599647651:role/photo-uploader-task-role",
+  "executionRoleArn": "arn:aws:iam::329599647651:role/photo-uploader-ECSTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::329599647651:role/photo-uploader-TaskRole",
   "containerDefinitions": [
     {
       "name": "ecs-container",
-      "image": "329599647651.dkr.ecr.eu-central-1.amazonaws.com/photo-uploader-repository:latest",
+      "image": "329599647651.dkr.ecr.eu-central-1.amazonaws.com/photo-uploader-repo:latest",
       "portMappings": [
         {
           "containerPort": 8080
