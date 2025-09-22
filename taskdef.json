@@ -8,7 +8,7 @@
   "taskRoleArn": "arn:aws:iam::329599647651:role/photo-uploader-TaskRole",
   "containerDefinitions": [
     {
-      "name": "ecs-container",
+      "name": "photo-uploader-container",
       "image": "329599647651.dkr.ecr.eu-central-1.amazonaws.com/photo-uploader-repo:latest",
       "portMappings": [
         {
