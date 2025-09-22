@@ -3,7 +3,7 @@ Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: arn:aws:ecs:eu-central-1:329599647651:task-definition/photo-uploader-task-def:4
+        TaskDefinition: arn:aws:ecs:eu-central-1:329599647651:task-definition/photo-uploader-task-def:5
         LoadBalancerInfo:
           ContainerName: photo-uploader-container
           ContainerPort: 8080
