@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Photo - Photo Gallery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-container {
+            padding: 40px 0;
+        }
+        .upload-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .upload-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .upload-body {
+            padding: 40px;
+        }
+        .file-drop-area {
+            border: 3px dashed #ddd;
+            border-radius: 10px;
+            padding: 60px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background-color: #fafafa;
+            cursor: pointer;
+        }
+        .file-drop-area:hover, .file-drop-area.drag-over {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+        }
+        .file-drop-area.file-selected {
+            border-color: #28a745;
+            background-color: #f0fff4;
+        }
+        .upload-icon {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+        .file-drop-area:hover .upload-icon {
+            color: #667eea;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            display: none;
+        }
+        .file-info.show {
+            display: block;
+        }
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .btn-upload {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 40px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-upload:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        .btn-upload:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .progress {
+            height: 6px;
+            margin-top: 15px;
+            display: none;
+        }
+        .progress.show {
+            display: block;
+        }
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        .upload-tips {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-camera"></i> Photo Gallery
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/gallery">Gallery</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/upload">Upload</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container upload-container">
+    <!-- Success/Error Messages -->
+    <div class="row" th:if="${successMessage}">
+        <div class="col-12">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" th:if="${errorMessage}">
+        <div class="col-12">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card upload-card">
+                <div class="upload-header">
+                    <h2><i class="fas fa-cloud-upload-alt me-2"></i>Upload Photo</h2>
+                    <p class="mb-0">Share your memories with the world</p>
+                </div>
+                <div class="upload-body">
+                    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+                        <!-- File Drop Area -->
+                        <div class="file-drop-area" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>Click to select or drag & drop your photo</h4>
+                            <p class="text-muted mb-0">Supported formats: JPG, PNG, GIF (Max: 10MB)</p>
+                        </div>
+
+                        <input type="file"
+                               id="fileInput"
+                               name="file"
+                               class="file-input"
+                               accept="image/*"
+                               required>
+
+                        <!-- File Info Display -->
+                        <div id="fileInfo" class="file-info">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="mb-1" id="fileName"></h6>
+                                    <small class="text-muted">
+                                        <span id="fileSize"></span> • <span id="fileType"></span>
+                                    </small>
+                                    <div id="imagePreview"></div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearFile()">
+                                        <i class="fas fa-times"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description Field -->
+                        <div class="mb-4 mt-4">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-align-left me-2"></i>Description (Optional)
+                            </label>
+                            <textarea class="form-control"
+                                      id="description"
+                                      name="description"
+                                      rows="3"
+                                      placeholder="Add a description for your photo..."
+                                      maxlength="500"></textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span>/500 characters
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="progress" id="uploadProgress">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                            <button type="submit" class="btn btn-upload btn-lg" id="uploadBtn" disabled>
+                                <i class="fas fa-upload me-2"></i>
+                                <span id="uploadBtnText">Select a photo first</span>
+                            </button>
+                            <a href="/gallery" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Gallery
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Upload Tips -->
+            <div class="upload-tips">
+                <h5><i class="fas fa-lightbulb me-2"></i>Upload Tips</h5>
+                <ul class="mb-0">
+                    <li>For best quality, use high-resolution images (at least 1920x1080)</li>
+                    <li>Supported formats: JPEG, PNG, GIF</li>
+                    <li>Maximum file size: 10MB</li>
+                    <li>Add descriptive text to help organize your photos</li>
+                    <li>Photos are securely stored in AWS S3</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('fileInput');
+        const fileDropArea = document.querySelector('.file-drop-area');
+        const fileInfo = document.getElementById('fileInfo');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadBtnText = document.getElementById('uploadBtnText');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const descriptionField = document.getElementById('description');
+        const charCount = document.getElementById('charCount');
+
+        // File input change handler
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop handlers
+        fileDropArea.addEventListener('dragover', handleDragOver);
+        fileDropArea.addEventListener('dragleave', handleDragLeave);
+        fileDropArea.addEventListener('drop', handleFileDrop);
+
+        // Description character counter
+        descriptionField.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+
+        // Form submit handler
+        uploadForm.addEventListener('submit', handleFormSubmit);
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            fileDropArea.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            fileDropArea.classList.remove('drag-over');
+        }
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            fileDropArea.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    fileInput.files = files;
+                    processFile(file);
+                } else {
+                    showAlert('Please select a valid image file.', 'danger');
+                }
+            }
+        }
+
+        function processFile(file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                showAlert('Please select a valid image file.', 'danger');
+                return;
+            }
+
+            // Validate file size (10MB max)
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showAlert('File size must be less than 10MB.', 'danger');
+                return;
+            }
+
+            // Update UI
+            fileDropArea.classList.add('file-selected');
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('fileType').textContent = file.type;
+
+            // Show image preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imagePreview = document.getElementById('imagePreview');
+                imagePreview.innerHTML = `<img src="${e.target.result}" class="preview-image" alt="Preview">`;
+            };
+            reader.readAsDataURL(file);
+
+            // Show file info and enable upload button
+            fileInfo.classList.add('show');
+            uploadBtn.disabled = false;
+            uploadBtnText.textContent = 'Upload Photo';
+        }
+
+        function clearFile() {
+            fileInput.value = '';
+            fileInfo.classList.remove('show');
+            fileDropArea.classList.remove('file-selected');
+            uploadBtn.disabled = true;
+            uploadBtnText.textContent = 'Select a photo first';
+            uploadProgress.classList.remove('show');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function handleFormSubmit(e) {
+            if (!fileInput.files[0]) {
+                e.preventDefault();
+                showAlert('Please select a file to upload.', 'danger');
+                return;
+            }
+
+            // Show upload progress
+            uploadBtn.disabled = true;
+            uploadBtnText.textContent = 'Uploading...';
+            uploadProgress.classList.add('show');
+
+            // Simulate progress (you can implement actual progress tracking with AJAX)
+            let progress = 0;
+            const progressBar = uploadProgress.querySelector('.progress-bar');
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
+            }, 200);
+
+            // The form will submit normally, but we show visual feedback
+            setTimeout(() => {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+            }, 1000);
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+            const container = document.querySelector('.upload-container .row').firstElementChild;
+            container.insertBefore(alertDiv, container.firstChild);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alertDiv);
+                bsAlert.close();
+            }, 5000);
+        }
+
+        // Auto-hide existing alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+    });
+</script>
+</body>
+</html>
