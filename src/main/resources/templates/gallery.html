@@ -182,7 +182,12 @@
                      class="photo-image"
                      data-bs-toggle="modal"
                      data-bs-target="#imageModal"
-                     th:onclick="'showImageModal(\'' + ${photo.presignedUrl} + '\', \'' + ${photo.filename} + '\', \'' + ${photo.description} + '\', \'' + ${photo.formattedFileSize} + '\', \'' + ${#temporals.format(photo.uploadedAt, 'MMM dd, yyyy HH:mm')} + '\')'">
+                     th:attr="data-url=${photo.presignedUrl},
+                              data-filename=${photo.filename},
+                              data-description=${photo.description},
+                              data-size=${photo.formattedFileSize},
+                              data-upload=${#temporals.format(photo.uploadedAt, 'MMM dd, yyyy HH:mm')}"
+                     onclick="showImageModal(this)">
 
                 <div class="card-body photo-info">
                     <h5 class="photo-title" th:text="${photo.filename}">Photo Title</h5>
@@ -264,13 +269,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    function showImageModal(imageUrl, filename, description, fileSize, uploadDate) {
+    function showImageModal(element) {
+        let imageUrl = element.getAttribute("data-url");
+        let filename = element.getAttribute("data-filename");
+        let description = element.getAttribute("data-description");
+        let fileSize = element.getAttribute("data-size");
+        let uploadDate = element.getAttribute("data-upload");
+
         document.getElementById('modalImage').src = imageUrl;
         document.getElementById('modalImageTitle').textContent = filename;
         document.getElementById('modalDescription').textContent = description || 'No description';
         document.getElementById('modalFileSize').textContent = fileSize;
         document.getElementById('modalUploadDate').textContent = uploadDate;
     }
+
 
     // Auto-hide alerts after 5 seconds
     document.addEventListener('DOMContentLoaded', function() {
