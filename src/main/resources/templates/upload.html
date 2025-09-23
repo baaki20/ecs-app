@@ -277,7 +277,7 @@
         uploadForm.addEventListener('submit', handleFormSubmit);
 
         function handleFileSelect(e) {
-            const file = e.target.files[0];
+            const file = e.target.files && e.target.files[0];
             if (file) {
                 processFile(file);
             }
@@ -297,11 +297,24 @@
             e.preventDefault();
             fileDropArea.classList.remove('drag-over');
 
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
+            const files = e.dataTransfer && e.dataTransfer.files;
+            if (files && files.length > 0) {
                 const file = files[0];
-                if (file.type.startsWith('image/')) {
-                    fileInput.files = files;
+                if (file.type && file.type.startsWith('image/')) {
+                    // Use DataTransfer to populate fileInput.files reliably
+                    try {
+                        if (typeof DataTransfer !== 'undefined') {
+                            const dt = new DataTransfer();
+                            dt.items.add(file);
+                            fileInput.files = dt.files;
+                        } else if (fileInput) {
+                            // fallback: attempt assignment (may be read-only)
+                            fileInput.files = files;
+                        }
+                    } catch (err) {
+                        // silent fallback: process the file even if fileInput can't be populated
+                        console.warn('Could not assign files to file input:', err);
+                    }
                     processFile(file);
                 } else {
                     showAlert('Please select a valid image file.', 'danger');
@@ -311,7 +324,7 @@
 
         function processFile(file) {
             // Validate file type
-            if (!file.type.startsWith('image/')) {
+            if (!file.type || !file.type.startsWith('image/')) {
                 showAlert('Please select a valid image file.', 'danger');
                 return;
             }
@@ -344,11 +357,37 @@
         }
 
         function clearFile() {
-            fileInput.value = '';
+            // Clear the native file input
+            try {
+                // Preferred: set an empty DataTransfer
+                if (typeof DataTransfer !== 'undefined') {
+                    const dt = new DataTransfer();
+                    fileInput.files = dt.files;
+                } else {
+                    fileInput.value = '';
+                }
+            } catch (err) {
+                // Fallback
+                fileInput.value = '';
+            }
+
+            // Clear UI indicators
+            document.getElementById('fileName').textContent = '';
+            document.getElementById('fileSize').textContent = '';
+            document.getElementById('fileType').textContent = '';
+            document.getElementById('imagePreview').innerHTML = '';
+
             fileInfo.classList.remove('show');
             fileDropArea.classList.remove('file-selected');
+
             uploadBtn.disabled = true;
             uploadBtnText.textContent = 'Select a photo first';
+
+            // Hide progress bar (reset width)
+            const progressBar = uploadProgress.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.width = '0%';
+            }
             uploadProgress.classList.remove('show');
         }
 
@@ -361,7 +400,7 @@
         }
 
         function handleFormSubmit(e) {
-            if (!fileInput.files[0]) {
+            if (!fileInput.files || !fileInput.files[0]) {
                 e.preventDefault();
                 showAlert('Please select a file to upload.', 'danger');
                 return;
@@ -372,19 +411,18 @@
             uploadBtnText.textContent = 'Uploading...';
             uploadProgress.classList.add('show');
 
-            // Simulate progress (you can implement actual progress tracking with AJAX)
+            // Simulate progress (replace with real AJAX/Fetch + progress if desired)
             let progress = 0;
             const progressBar = uploadProgress.querySelector('.progress-bar');
             const progressInterval = setInterval(() => {
                 progress += Math.random() * 15;
                 if (progress > 90) progress = 90;
-                progressBar.style.width = progress + '%';
+                if (progressBar) progressBar.style.width = progress + '%';
             }, 200);
 
-            // The form will submit normally, but we show visual feedback
             setTimeout(() => {
                 clearInterval(progressInterval);
-                progressBar.style.width = '100%';
+                if (progressBar) progressBar.style.width = '100%';
             }, 1000);
         }
 
@@ -415,6 +453,9 @@
                 bsAlert.close();
             }, 5000);
         });
+
+        // Expose clearFile globally so inline onclick works
+        window.clearFile = clearFile;
     });
 </script>
 </body>
