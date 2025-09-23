@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Gallery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gallery-container {
+            padding: 20px 0;
+        }
+        .photo-card {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 30px;
+            height: 100%;
+        }
+        .photo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .photo-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .photo-info {
+            padding: 20px;
+        }
+        .photo-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .photo-description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .photo-meta {
+            font-size: 0.8rem;
+            color: #999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+        }
+        .btn-delete:hover {
+            background-color: #c82333;
+            color: white;
+        }
+        .empty-gallery {
+            text-align: center;
+            padding: 80px 20px;
+            color: #666;
+        }
+        .empty-gallery i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        /* Modal styles */
+        .modal-dialog-centered {
+            max-width: 90vw;
+        }
+        .modal-body {
+            padding: 0;
+        }
+        .modal-image {
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
+            object-fit: contain;
+        }
+        .image-info {
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        /* Alert styles */
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+        .alert-success {
+            background-color: #d1edff;
+            color: #0c5460;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-camera"></i> Photo Gallery
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/gallery">Gallery</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/upload">Upload</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container gallery-container">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-0">Photo Gallery</h1>
+                    <p class="text-muted mb-0">
+                        <span th:text="${photoCount}">0</span> photos in your gallery
+                    </p>
+                </div>
+                <a href="/upload" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Photo
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div class="row" th:if="${successMessage}">
+        <div class="col-12">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" th:if="${errorMessage}">
+        <div class="col-12">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Gallery -->
+    <div class="row" th:if="${photos != null and not #lists.isEmpty(photos)}">
+        <div class="col-lg-4 col-md-6 col-sm-12" th:each="photo : ${photos}">
+            <div class="card photo-card">
+                <img th:src="${photo.presignedUrl}"
+                     th:alt="${photo.description}"
+                     class="photo-image"
+                     data-bs-toggle="modal"
+                     data-bs-target="#imageModal"
+                     th:onclick="'showImageModal(\'' + ${photo.presignedUrl} + '\', \'' + ${photo.filename} + '\', \'' + ${photo.description} + '\', \'' + ${photo.formattedFileSize} + '\', \'' + ${#temporals.format(photo.uploadedAt, 'MMM dd, yyyy HH:mm')} + '\')'">
+
+                <div class="card-body photo-info">
+                    <h5 class="photo-title" th:text="${photo.filename}">Photo Title</h5>
+                    <p class="photo-description" th:text="${photo.description ?: 'No description'}">Photo description</p>
+
+                    <div class="photo-meta">
+                        <div>
+                            <small>
+                                <i class="fas fa-calendar me-1"></i>
+                                <span th:text="${#temporals.format(photo.uploadedAt, 'MMM dd, yyyy')}">Date</span>
+                            </small>
+                            <br>
+                            <small>
+                                <i class="fas fa-file me-1"></i>
+                                <span th:text="${photo.formattedFileSize}">File Size</span>
+                            </small>
+                        </div>
+                        <div>
+                            <form th:action="@{'/photos/' + ${photo.id} + '/delete'}"
+                                  method="post"
+                                  style="display: inline;"
+                                  onsubmit="return confirm('Are you sure you want to delete this photo?')">
+                                <button type="submit" class="btn btn-delete btn-sm">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty Gallery State -->
+    <div class="row" th:if="${photos == null or #lists.isEmpty(photos)}">
+        <div class="col-12">
+            <div class="empty-gallery">
+                <i class="fas fa-images"></i>
+                <h3>No photos yet</h3>
+                <p>Your gallery is empty. Start by uploading your first photo!</p>
+                <a href="/upload" class="btn btn-primary btn-lg">
+                    <i class="fas fa-upload me-2"></i>Upload Your First Photo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImageTitle">Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="" class="modal-image">
+                <div class="image-info">
+                    <h6><strong>Description:</strong></h6>
+                    <p id="modalDescription" class="mb-2">No description</p>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <strong>File Size:</strong> <span id="modalFileSize"></span>
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">
+                                <strong>Uploaded:</strong> <span id="modalUploadDate"></span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function showImageModal(imageUrl, filename, description, fileSize, uploadDate) {
+        document.getElementById('modalImage').src = imageUrl;
+        document.getElementById('modalImageTitle').textContent = filename;
+        document.getElementById('modalDescription').textContent = description || 'No description';
+        document.getElementById('modalFileSize').textContent = fileSize;
+        document.getElementById('modalUploadDate').textContent = uploadDate;
+    }
+
+    // Auto-hide alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            }, 5000);
+        });
+    });
+</script>
+</body>
+</html>
