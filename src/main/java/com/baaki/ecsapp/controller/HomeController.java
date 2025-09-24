@@ -23,7 +23,7 @@ public class HomeController {
 
         model.addAttribute("fullName", "Abdul Baaki N-Nyeyam Hudu");
         model.addAttribute("labName", "ECS Photo Gallery Lab");
-        model.addAttribute("lastUpdated", "Tuesday");
+        model.addAttribute("lastUpdated", "Wednesday");
         return "index";
     }
 }
